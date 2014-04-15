@@ -4,11 +4,11 @@
     "status": "RELEASE",
     "version": "1.0.0",
     "dependencies": [
-	{
+	    {
             "org": "zenika",
             "name": "C",
             "version": "1.0.0",
             "status": "RELEASE"
-        }]
-    }
+        }
+    ]
 }

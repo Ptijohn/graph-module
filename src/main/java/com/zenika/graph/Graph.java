@@ -8,10 +8,10 @@ import java.util.List;
  */
 public class Graph {
     String name;
-    private List<Node> nodes;
+    private List<Artifact> artifacts;
 
     public Graph(){
-        nodes = new ArrayList<Node>();
+        artifacts = new ArrayList<Artifact>();
     }
 
     public Graph(String name){
@@ -21,28 +21,28 @@ public class Graph {
 
     /**
      * Calculates if there's any node that doesn't have any dependency and that is not part of any dependency
-     * @return the list of isolated nodes
+     * @return the list of isolated artifacts
      */
-    public List<Node> getIsolatedNodes(){
-        List<Node> isolatedNodes = new ArrayList<Node>();
+    public List<Artifact> getIsolatedNodes(){
+        List<Artifact> isolatedArtifacts = new ArrayList<Artifact>();
 
-        for(Node node : this.nodes){
-            if(node.isIsolated()){
+        for(Artifact artifact : this.artifacts){
+            if(artifact.hasDependencies()){
 
                 boolean isADependency = false;
-                for(Node nodeBis : this.nodes){
-                    if(!nodeBis.equals(node) && nodeBis.getDependencies() != null && !nodeBis.getDependencies().isEmpty()){
-                        for(Node dependency : nodeBis.getDependencies()){
-                            isADependency = isADependency || dependency.equals(node);
+                for(Artifact artifactBis : this.artifacts){
+                    if(!artifactBis.equals(artifact) && artifactBis.getDependencies() != null && !artifactBis.getDependencies().isEmpty()){
+                        for(Artifact dependency : artifactBis.getDependencies()){
+                            isADependency = isADependency || dependency.equals(artifact);
                         }
                     }
                 }
                 if (!isADependency){
-                    isolatedNodes.add(node);
+                    isolatedArtifacts.add(artifact);
                 }
             }
         }
-        return isolatedNodes;
+        return isolatedArtifacts;
     }
 
     /**
@@ -54,28 +54,28 @@ public class Graph {
         Graph invertedGraph = new Graph("Inverted Graph");
 
         if(graph != null){
-            for(Node currentNode : graph.getNodes()){
-                if(currentNode.getDependencies() != null){
-                    for(Node dependency : currentNode.getDependencies()){
-                        //If we find a dependency of currentNode in our invertedGraph, we alter it with a new dependency (currentNode).
+            for(Artifact currentArtifact : graph.getArtifacts()){
+                if(currentArtifact.getDependencies() != null){
+                    for(Artifact dependency : currentArtifact.getDependencies()){
+                        //If we find a dependency of currentArtifact in our invertedGraph, we alter it with a new dependency (currentArtifact).
                         //If if we don't have it yet, we add it to the graph
-                        Node found = invertedGraph.isNodePresent(dependency);
-                        Node dependencyToAdd = new Node(currentNode);
+                        Artifact found = invertedGraph.isNodePresent(dependency);
+                        Artifact dependencyToAdd = new Artifact(currentArtifact);
                         if(found == null){
-                            Node toAdd = new Node(dependency);
+                            Artifact toAdd = new Artifact(dependency);
                             toAdd.getDependencies().add(dependencyToAdd);
-                            invertedGraph.getNodes().add(toAdd);
+                            invertedGraph.getArtifacts().add(toAdd);
                         } else {
                             found.getDependencies().add(dependencyToAdd);
                         }
                     }
                 }
 
-                //Here we treat the case of currentNode in itself
-                Node found = invertedGraph.isNodePresent(currentNode);
+                //Here we treat the case of currentArtifact in itself
+                Artifact found = invertedGraph.isNodePresent(currentArtifact);
                 if(found == null){
-                    Node nodeToAdd = new Node(currentNode);
-                    invertedGraph.getNodes().add(nodeToAdd);
+                    Artifact artifactToAdd = new Artifact(currentArtifact);
+                    invertedGraph.getArtifacts().add(artifactToAdd);
                 }
             }
         }
@@ -85,15 +85,15 @@ public class Graph {
 
     /**
      * Checks if a node is present in the graph instance
-     * @param nodeToFind
+     * @param artifactToFind
      * @return the node if present, null if not
      */
-    public Node isNodePresent(Node nodeToFind){
-        Node present = null;
+    public Artifact isNodePresent(Artifact artifactToFind){
+        Artifact present = null;
 
-        for(Node node : this.getNodes()){
-            if(node.equals(nodeToFind)){
-                present = node;
+        for(Artifact artifact : this.getArtifacts()){
+            if(artifact.equals(artifactToFind)){
+                present = artifact;
                 break;
             }
         }
@@ -105,16 +105,16 @@ public class Graph {
     public String toString() {
         return "Graph{" +
                 "name='" + name + '\'' +
-                ", nodes=" + nodes +
+                ", artifacts=" + artifacts +
                 '}';
     }
 
-    public List<Node> getNodes() {
-        return nodes;
+    public List<Artifact> getArtifacts() {
+        return artifacts;
     }
 
-    public void setNodes(List<Node> nodes) {
-        this.nodes = nodes;
+    public void setArtifacts(List<Artifact> artifacts) {
+        this.artifacts = artifacts;
     }
 
     public String getName() {

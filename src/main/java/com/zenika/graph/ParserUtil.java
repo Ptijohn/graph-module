@@ -14,18 +14,18 @@ public class ParserUtil {
      * @param fileName
      * @return
      */
-    public static Node parseNode(String fileName){
-        Node node = null;
+    public static Artifact parseNode(String fileName){
+        Artifact artifact = null;
 
         //2. Convert JSON to Java object
         try{
             ObjectMapper mapper = new ObjectMapper();
-            node = mapper.readValue(new File(fileName), Node.class);
+            artifact = mapper.readValue(new File(fileName), Artifact.class);
         } catch(IOException e){
             e.printStackTrace();
         }
 
-        return node;
+        return artifact;
     }
 
 
@@ -47,7 +47,7 @@ public class ParserUtil {
         File[] files = directory.listFiles();
 
         for(File file : files){
-            graph.getNodes().add(parseNode(file.getAbsolutePath()));
+            graph.getArtifacts().add(parseNode(file.getAbsolutePath()));
         }
         return graph;
     }

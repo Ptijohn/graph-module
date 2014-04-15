@@ -1,7 +1,7 @@
 {
     "org": "zenika",
-    "name": "A",
+    "name": "E",
     "status": "RELEASE",
-    "version": "1.2",
+    "version": "1.0",
     "dependencies": []
 }

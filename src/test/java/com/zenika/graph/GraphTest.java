@@ -10,14 +10,14 @@ public class GraphTest extends TestCase {
         Graph graph = new Graph("GraphTest");
 
         assertTrue(graph.getIsolatedNodes().isEmpty());
-        Node node1 = new Node("zenika", "RELEASE", "1.0.0", "A");
-        graph.getNodes().add(node1);
+        Artifact artifact1 = new Artifact("zenika", "RELEASE", "1.0.0", "A");
+        graph.getArtifacts().add(artifact1);
 
         assertEquals(graph.getIsolatedNodes().size(), 1);
 
-        Node node2 = new Node("zenika", "RELEASE", "1.0.0", "B");
-        node2.getDependencies().add(node1);
-        graph.getNodes().add(node2);
+        Artifact artifact2 = new Artifact("zenika", "RELEASE", "1.0.0", "B");
+        artifact2.getDependencies().add(artifact1);
+        graph.getArtifacts().add(artifact2);
 
         assertEquals(graph.getIsolatedNodes().size(), 0);
     }

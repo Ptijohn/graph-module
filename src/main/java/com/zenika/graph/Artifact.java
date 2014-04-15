@@ -8,18 +8,18 @@ import java.util.List;
  * Class representing a node
  * Created by ptijohn on 11/04/14.
  */
-public class Node implements Serializable{
+public class Artifact implements Serializable{
     private String org;
     private String status;
     private String version;
     private String name;
-    private List<Node> dependencies;
+    private List<Artifact> dependencies;
 
-    public Node(){
-        dependencies = new ArrayList<Node>();
+    public Artifact(){
+        dependencies = new ArrayList<Artifact>();
     }
 
-    public Node(String org, String status, String version, String name){
+    public Artifact(String org, String status, String version, String name){
         this();
         this.org = org;
         this.status = status;
@@ -27,11 +27,11 @@ public class Node implements Serializable{
         this.name = name;
     }
 
-    public Node(Node node){
-        this(node.getOrg(), node.getStatus(), node.getVersion(), node.getName());
+    public Artifact(Artifact artifact){
+        this(artifact.getOrg(), artifact.getStatus(), artifact.getVersion(), artifact.getName());
     }
 
-    public boolean isIsolated(){
+    public boolean hasDependencies(){
         return (this.dependencies == null || this.dependencies.isEmpty());
     }
 
@@ -43,11 +43,11 @@ public class Node implements Serializable{
         this.name = name;
     }
 
-    public List<Node> getDependencies() {
+    public List<Artifact> getDependencies() {
         return dependencies;
     }
 
-    public void setDependencies(List<Node> dependencies) {
+    public void setDependencies(List<Artifact> dependencies) {
         this.dependencies = dependencies;
     }
 
@@ -80,12 +80,12 @@ public class Node implements Serializable{
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Node node = (Node) o;
+        Artifact artifact = (Artifact) o;
 
-        if (name != null ? !name.equals(node.name) : node.name != null) return false;
-        if (org != null ? !org.equals(node.org) : node.org != null) return false;
-        if (status != null ? !status.equals(node.status) : node.status != null) return false;
-        if (version != null ? !version.equals(node.version) : node.version != null) return false;
+        if (name != null ? !name.equals(artifact.name) : artifact.name != null) return false;
+        if (org != null ? !org.equals(artifact.org) : artifact.org != null) return false;
+        if (status != null ? !status.equals(artifact.status) : artifact.status != null) return false;
+        if (version != null ? !version.equals(artifact.version) : artifact.version != null) return false;
 
         return true;
     }
@@ -101,7 +101,7 @@ public class Node implements Serializable{
 
     @Override
     public String toString() {
-        return "Node{" +
+        return "Artifact{" +
                 "org='" + org + '\'' +
                 ", status='" + status + '\'' +
                 ", version='" + version + '\'' +
