@@ -32,3 +32,9 @@ properties
 
 There's a properties file in resources. You can edit there the directory in which you have stored node files.
 There's a node directory committed in resources, so you can use that to test.
+
+program
+============
+
+You can have a look at Main.java to see how this program works.
+For more details, please have a look at Node, Graph and ParserUtil classes.
