@@ -19,6 +19,10 @@ public class Graph {
         this.name = name;
     }
 
+    /**
+     * Calculates if there's any node that doesn't have any dependency and that is not part of any dependency
+     * @return the list of isolated nodes
+     */
     public List<Node> getIsolatedNodes(){
         List<Node> isolatedNodes = new ArrayList<Node>();
 
@@ -41,6 +45,11 @@ public class Graph {
         return isolatedNodes;
     }
 
+    /**
+     * Static method that inverts a graph (i.e. inverts every dependency
+     * @param graph
+     * @return the newly created inverted graph
+     */
     public static Graph invertGraph(Graph graph){
         Graph invertedGraph = new Graph("Inverted Graph");
 
@@ -74,6 +83,11 @@ public class Graph {
         return invertedGraph;
     }
 
+    /**
+     * Checks if a node is present in the graph instance
+     * @param nodeToFind
+     * @return the node if present, null if not
+     */
     public Node isNodePresent(Node nodeToFind){
         Node present = null;
 

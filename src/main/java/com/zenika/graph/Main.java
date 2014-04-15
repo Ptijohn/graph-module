@@ -29,6 +29,10 @@ public class Main {
     }
 
 
+    /**
+     * Gets properties from properties file
+     * @return
+     */
     public static Properties getProperties(){
         Properties prop = new Properties();
         InputStream input = null;

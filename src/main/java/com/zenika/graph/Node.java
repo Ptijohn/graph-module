@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * Class representing a node
  * Created by ptijohn on 11/04/14.
  */
 public class Node implements Serializable{
