@@ -6,7 +6,7 @@ A simple graph module. It scans a repository for files containing nodes with dep
 json-format
 ============
 
-Each node is, for now, stored in a separate file. It contains some information about himself, and about his dependencies.
+Each node is, for now, stored in separate files. It contains some information about himself, and about his dependencies.
 In fact, each dependency is a complete node, except that it does not contain its own dependencies.
 
 You can see here the JSON format of a node:
