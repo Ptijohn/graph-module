@@ -7,7 +7,7 @@ import junit.framework.TestCase;
  */
 public class ParserUtilTest extends TestCase {
     public void testParseNode(){
-        Node node = ParserUtil.parseNode("/home/ptijohn/Documents/jsonDataTest");
+        Node node = ParserUtil.parseNode("graph-module/src/main/resources/Nodes/nodeC");
         assertNotNull(node);
         assertEquals(node.getName(), "C");
         assertFalse(node.getDependencies().isEmpty());
