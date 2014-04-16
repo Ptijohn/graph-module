@@ -37,4 +37,9 @@ program
 ============
 
 You can have a look at Main.java to see how this program works.
-For more details, please have a look at Node, Graph and ParserUtil classes.
+For more details, please have a look at Artifact, Graph and ParserUtil classes.
+
+neo4j
+============
+
+Now including neo4j to manage our nodes. You can have a look at Main.java to see how we can go through our graph from one node or another, in whatever direction we want. (See commented code)
