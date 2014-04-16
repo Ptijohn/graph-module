@@ -7,7 +7,7 @@ import junit.framework.TestCase;
  */
 public class ParserUtilTest extends TestCase {
     public void testParseNode(){
-        Artifact artifact = ParserUtil.parseNode("graph-module/src/main/resources/Nodes/nodeC");
+        Artifact artifact = ParserUtil.parseNode("src/main/resources/Nodes/nodeC");
         assertNotNull(artifact);
         assertEquals(artifact.getName(), "C");
         assertFalse(artifact.getDependencies().isEmpty());
