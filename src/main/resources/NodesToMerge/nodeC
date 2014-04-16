@@ -1,0 +1,19 @@
+{
+    "org": "zenika",
+    "name": "C",
+    "status": "RELEASE",
+    "version": "1.0.0",
+    "dependencies": [
+	    {
+            "org": "zenika",
+            "name": "A",
+            "version": "1.2",
+            "status": "RELEASE"
+        }, {
+            "org": "zenika",
+            "name": "F",
+            "version": "2.0",
+            "status": "RELEASE"
+        }
+    ]
+}

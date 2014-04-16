@@ -5,7 +5,9 @@ package com.zenika.graph;
  */
 public final class GraphConstants {
     //Artifact directory property
-    public static final String NODES_DIRECTORY = "artifacts.directory";
+    public static final String ARTIFACTS_DIRECTORY = "artifacts.directory";
+    public static final String ARTIFCATS_MERGE_DIRECTORY = "artifacts.merge.directory";
 
     public static final String DB_PATH = "db.path";
+
 }

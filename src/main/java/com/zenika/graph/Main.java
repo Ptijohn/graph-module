@@ -18,6 +18,7 @@ public class Main {
         Properties prop = getProperties();
         //Graph graph = null;
         List<Artifact> artifacts;
+        /*List<Artifact> artifactsToMerge;*/
         Map<String, Node> nodes = new HashMap<String, Node>();
         List<Relationship> relationshipList = new ArrayList<Relationship>();
 
@@ -29,11 +30,14 @@ public class Main {
         registerShutdownHook(graphDb);
 
         if(prop == null){
-            artifacts = ParserUtil.scanDirectory("/home/ptijohn/Documents/Nodes");
+            artifacts = ParserUtil.scanDirectory("src/main/resources/Nodes");
+            /*artifactsToMerge = ParserUtil.scanDirectory("src/main/resources/NodesToMerge");*/
         } else {
-            artifacts = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.NODES_DIRECTORY));
+            artifacts = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.ARTIFACTS_DIRECTORY));
+            /*artifactsToMerge = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.ARTIFCATS_MERGE_DIRECTORY));*/
         }
 
+        //Transaction to create nodes
         try ( Transaction tx = graphDb.beginTx() )
         {
             //We go through the artifact list to create all nodes
@@ -47,7 +51,12 @@ public class Main {
 
                 System.out.println(artifact.getName()+" "+node.getId());
             }
+            tx.success();
+        }
 
+        //Transaction to create relationships
+        try ( Transaction tx = graphDb.beginTx() )
+        {
             //We go through it again to get all relationships
             for(Artifact artifact : artifacts){
                 if(artifact.getDependencies() != null && !artifact.getDependencies().isEmpty()){
@@ -57,28 +66,16 @@ public class Main {
                     }
                 }
             }
-            Iterator<Node> it = GlobalGraphOperations.at(graphDb).getAllNodes().iterator();
-            while(it.hasNext()){
-                Node n = it.next();
-                System.out.println(n.getId()+": "+n.hasRelationship());
-            }
 
-            String output = "";
-            for ( Path position : graphDb.traversalDescription()
-                    .depthFirst()
-                    .relationships( RelTypes.DEPENDS_OF, Direction.INCOMING ) //We go up the tree
-                    /*.relationships( RelTypes.DEPENDS_OF, Direction.OUTGOING )*/ //We go down the tree
-                    /*.relationships( RelTypes.DEPENDS_OF )*/ //We go in two directions
-                    .evaluator( Evaluators.toDepth( 2 ) ) //Manage depth of traversal
-                    .traverse(nodes.get("B")) )
-            {
-                output += position
-                        + "\n";
-            }
+            tx.success();
+        }
 
-            System.out.println(output);
+        //Transaction to display graph result
+        try ( Transaction tx = graphDb.beginTx() )
+        {
+            System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, Direction.INCOMING, "B"));
 
-
+            System.out.println(GraphUtil.displayGraphCustom(graphDb, nodes, Direction.INCOMING, "B"));
 
             tx.success();
         }
@@ -87,9 +84,7 @@ public class Main {
         cleanDB(graphDb);
 
         graphDb.shutdown();
-
     }
-
 
     public static Properties getProperties(){
         Properties prop = new Properties();
@@ -122,6 +117,10 @@ public class Main {
         return prop;
     }
 
+    /**
+     * Make the shutdown of DB cleaner
+     * @param graphDb
+     */
     private static void registerShutdownHook( final GraphDatabaseService graphDb )
     {
         // Registers a shutdown hook for the Neo4j instance so that it
@@ -137,6 +136,10 @@ public class Main {
         } );
     }
 
+    /**
+     * Cleans DB of every nodes/relationships
+     * @param graphDb
+     */
     private static void cleanDB(GraphDatabaseService graphDb){
         try ( Transaction tx = graphDb.beginTx() )
         {
@@ -152,8 +155,5 @@ public class Main {
         }
     }
 
-    private static enum RelTypes implements RelationshipType
-    {
-        DEPENDS_OF
-    }
+
 }
