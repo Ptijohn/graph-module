@@ -17,14 +17,14 @@ You can see here the JSON format of a node:
         "status": "RELEASE",
         "version": "1.0.0",
         "dependencies": [
-                {
-                    "org": "zenika",
-                    "name": "C",
-                    "version": "1.0.0",
-                    "status": "RELEASE"
-                }
-            ]
-        }
+            {
+                "org": "zenika",
+                "name": "C",
+                "version": "1.0.0",
+                "status": "RELEASE"
+            }
+        ]
+        
     }
 
 properties
@@ -43,3 +43,9 @@ neo4j
 ============
 
 Now including neo4j to manage our nodes. You can have a look at Main.java to see how we can go through our graph from one node or another, in whatever direction we want. (See commented code)
+
+next
+============
+Two things to do on the roadmap :
+* Find a way to merge two graphs, or more particularly to merge a small part of the graph that has been updated into the whole graph
+* Create a service that, if the databse is already populated, gets the nodes from there and not from the files present in our directories
