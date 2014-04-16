@@ -3,6 +3,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Created by ptijohn on 11/04/14.
@@ -34,10 +36,11 @@ public class ParserUtil {
      * @param directoryName
      * @return
      */
-    public static Graph scanDirectory(String directoryName){
+    public static List<Artifact> scanDirectory(String directoryName){
         File directory = new File(directoryName);
 
-        Graph graph = new Graph("Graph");
+        //Graph graph = new Graph("Graph");
+        List<Artifact> artifacts = new ArrayList<Artifact>();
 
         if(!directory.isDirectory()){
             System.out.println("Not a directory");
@@ -47,8 +50,8 @@ public class ParserUtil {
         File[] files = directory.listFiles();
 
         for(File file : files){
-            graph.getArtifacts().add(parseNode(file.getAbsolutePath()));
+            artifacts.add(parseNode(file.getAbsolutePath()));
         }
-        return graph;
+        return artifacts;
     }
 }

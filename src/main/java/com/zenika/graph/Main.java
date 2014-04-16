@@ -2,7 +2,9 @@ package com.zenika.graph;
 
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
+import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.graphdb.traversal.Evaluators;
+import org.neo4j.tooling.GlobalGraphOperations;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,26 +16,28 @@ import java.util.*;
 public class Main {
     public static void main(String[] args){
         Properties prop = getProperties();
-        Graph graph = null;
+        //Graph graph = null;
+        List<Artifact> artifacts;
         Map<String, Node> nodes = new HashMap<String, Node>();
         List<Relationship> relationshipList = new ArrayList<Relationship>();
 
         GraphDatabaseService graphDb;
         Relationship relationship;
 
-        graphDb = new GraphDatabaseFactory().newEmbeddedDatabase(prop.getProperty(GraphConstants.DB_PATH));
+        graphDb = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(prop.getProperty(GraphConstants.DB_PATH)).setConfig(GraphDatabaseSettings.cache_type,"strong").newGraphDatabase();
+
         registerShutdownHook(graphDb);
 
         if(prop == null){
-            graph = ParserUtil.scanDirectory("/home/ptijohn/Documents/Nodes");
+            artifacts = ParserUtil.scanDirectory("/home/ptijohn/Documents/Nodes");
         } else {
-            graph = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.NODES_DIRECTORY));
+            artifacts = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.NODES_DIRECTORY));
         }
 
         try ( Transaction tx = graphDb.beginTx() )
         {
             //We go through the artifact list to create all nodes
-            for(Artifact artifact : graph.getArtifacts()){
+            for(Artifact artifact : artifacts){
                 Node node = graphDb.createNode();
                 node.setProperty("org", artifact.getOrg());
                 node.setProperty("name", artifact.getName());
@@ -45,13 +49,18 @@ public class Main {
             }
 
             //We go through it again to get all relationships
-            for(Artifact artifact : graph.getArtifacts()){
+            for(Artifact artifact : artifacts){
                 if(artifact.getDependencies() != null && !artifact.getDependencies().isEmpty()){
                     Node node = nodes.get(artifact.getName());
                     for(Artifact dependency : artifact.getDependencies()){
                         relationshipList.add(node.createRelationshipTo(nodes.get(dependency.getName()), RelTypes.DEPENDS_OF));
                     }
                 }
+            }
+            Iterator<Node> it = GlobalGraphOperations.at(graphDb).getAllNodes().iterator();
+            while(it.hasNext()){
+                Node n = it.next();
+                System.out.println(n.getId()+": "+n.hasRelationship());
             }
 
             String output = "";
@@ -60,29 +69,25 @@ public class Main {
                     .relationships( RelTypes.DEPENDS_OF, Direction.INCOMING ) //We go up the tree
                     /*.relationships( RelTypes.DEPENDS_OF, Direction.OUTGOING )*/ //We go down the tree
                     /*.relationships( RelTypes.DEPENDS_OF )*/ //We go in two directions
-                    .traverse( nodes.get("B") ) )
+                    .evaluator( Evaluators.toDepth( 2 ) ) //Manage depth of traversal
+                    .traverse(nodes.get("B")) )
             {
                 output += position
                         + "\n";
             }
 
             System.out.println(output);
+
+
+
             tx.success();
         }
 
+        //Cleaning DB, so that we don't keep in DB previous nodes created
+        cleanDB(graphDb);
+
         graphDb.shutdown();
 
-
-
-        System.out.println(graph);
-
-        Graph invertedGraph = null;
-
-        invertedGraph = Graph.invertGraph(graph);
-
-        System.out.println(invertedGraph);
-
-        System.out.println("Isolated nodes: "+invertedGraph.getIsolatedNodes());
     }
 
 
@@ -130,6 +135,21 @@ public class Main {
                 graphDb.shutdown();
             }
         } );
+    }
+
+    private static void cleanDB(GraphDatabaseService graphDb){
+        try ( Transaction tx = graphDb.beginTx() )
+        {
+            Iterator<Node> it = GlobalGraphOperations.at(graphDb).getAllNodes().iterator();
+            while(it.hasNext()){
+                Node n = it.next();
+                for(Relationship r : n.getRelationships()){
+                    r.delete();
+                }
+                n.delete();
+            }
+            tx.success();
+        }
     }
 
     private static enum RelTypes implements RelationshipType
