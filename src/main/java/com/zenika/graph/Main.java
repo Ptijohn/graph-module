@@ -18,9 +18,9 @@ public class Main {
         Properties prop = getProperties();
         //Graph graph = null;
         List<Artifact> artifacts;
-        /*List<Artifact> artifactsToMerge;*/
-        Map<String, Node> nodes = new HashMap<String, Node>();
-        List<Relationship> relationshipList = new ArrayList<Relationship>();
+        List<Artifact> artifactsToMerge;
+        Map<String, Long> nodes = new HashMap<String, Long>();
+        List<Long> relationshipList = new ArrayList<Long>();
 
         GraphDatabaseService graphDb;
         Relationship relationship;
@@ -31,10 +31,10 @@ public class Main {
 
         if(prop == null){
             artifacts = ParserUtil.scanDirectory("src/main/resources/Nodes");
-            /*artifactsToMerge = ParserUtil.scanDirectory("src/main/resources/NodesToMerge");*/
+            artifactsToMerge = ParserUtil.scanDirectory("src/main/resources/NodesToMerge");
         } else {
             artifacts = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.ARTIFACTS_DIRECTORY));
-            /*artifactsToMerge = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.ARTIFCATS_MERGE_DIRECTORY));*/
+            artifactsToMerge = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.ARTIFCATS_MERGE_DIRECTORY));
         }
 
         //Transaction to create nodes
@@ -47,7 +47,7 @@ public class Main {
                 node.setProperty("name", artifact.getName());
                 node.setProperty("status", artifact.getStatus());
                 node.setProperty("version", artifact.getVersion());
-                nodes.put(artifact.getName(), node);
+                nodes.put(artifact.getName(), node.getId());
 
                 System.out.println(artifact.getName()+" "+node.getId());
             }
@@ -60,9 +60,9 @@ public class Main {
             //We go through it again to get all relationships
             for(Artifact artifact : artifacts){
                 if(artifact.getDependencies() != null && !artifact.getDependencies().isEmpty()){
-                    Node node = nodes.get(artifact.getName());
+                    Node node = graphDb.getNodeById(nodes.get(artifact.getName()));
                     for(Artifact dependency : artifact.getDependencies()){
-                        relationshipList.add(node.createRelationshipTo(nodes.get(dependency.getName()), RelTypes.DEPENDS_OF));
+                        relationshipList.add(node.createRelationshipTo(graphDb.getNodeById(nodes.get(dependency.getName())), RelTypes.DEPENDS_OF).getId());
                     }
                 }
             }
@@ -73,12 +73,34 @@ public class Main {
         //Transaction to display graph result
         try ( Transaction tx = graphDb.beginTx() )
         {
-            System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, Direction.INCOMING, "B"));
+            System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, Direction.OUTGOING, "C", 4));
 
-            System.out.println(GraphUtil.displayGraphCustom(graphDb, nodes, Direction.INCOMING, "B"));
+            System.out.println(GraphUtil.displayGraphCustom(graphDb, nodes, Direction.OUTGOING, "C", 4));
+
+            System.out.println("Isolated nodes size : "+GraphUtil.findIsolatedNodes(graphDb).size());
 
             tx.success();
         }
+
+
+
+        System.out.println("Merging...");
+        GraphUtil.mergeNode(graphDb, artifactsToMerge, nodes, relationshipList);
+        System.out.println("Merging DONE");
+
+        //Transaction to display graph result
+        try ( Transaction tx = graphDb.beginTx() )
+        {
+            System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, Direction.OUTGOING, "C", 4));
+
+            System.out.println(GraphUtil.displayGraphCustom(graphDb, nodes, Direction.OUTGOING, "C", 4));
+
+            System.out.println("Isolated nodes size : "+GraphUtil.findIsolatedNodes(graphDb).size());
+
+            tx.success();
+        }
+
+
 
         //Cleaning DB, so that we don't keep in DB previous nodes created
         cleanDB(graphDb);
