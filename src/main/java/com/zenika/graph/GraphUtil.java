@@ -4,6 +4,7 @@ import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.traversal.Evaluators;
 import org.neo4j.tooling.GlobalGraphOperations;
 
+import javax.management.relation.Relation;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -45,8 +46,6 @@ public class GraphUtil {
                     node.setProperty("status", artifact.getStatus());
                     node.setProperty("version", artifact.getVersion());
                     nodes.put(artifact.getName(), node.getId());
-
-                    System.out.println(artifact.getName()+" "+node.getId());
                 }
             }
             tx.success();
@@ -123,8 +122,7 @@ public class GraphUtil {
                 .evaluator( Evaluators.toDepth(depth) ) //Manage depth of traversal
                 .traverse(graphDb.getNodeById(nodes.get(nodeName))) )
         {
-            output += position
-                    + "\n";
+            output += position + "\n";
         }
         return output;
     }
@@ -159,15 +157,64 @@ public class GraphUtil {
     private static String buildRelationsGraph(Path position, Direction direction){
         String output = "";
         //output += "("+node.getProperty("name")+")";
-        for(Node node : position.nodes()){
-            for(Relationship r : node.getRelationships(direction)){
-                if(Direction.INCOMING.equals(direction)){
-                    output+="("+node.getProperty("name")+")"+"<--["+r.getType().name()+"]--("+r.getStartNode().getProperty("name")+")";
-                } else {
-                    output+="("+node.getProperty("name")+")"+"--["+r.getType().name()+"]-->("+r.getEndNode().getProperty("name")+")";
+        /*System.out.println("Start : "+position.startNode());
+        System.out.println("End : "+position.endNode());
+        System.out.println("Number : "+position.length());*/
+        if(position.length() > 0){
+            Iterator<Node> it = position.nodes().iterator();
+
+            Node n = null;
+            Node previousNode = null;
+            while(it.hasNext()){
+                n = it.next();
+                if(Direction.INCOMING.equals(direction) && n!=position.endNode()){
+                    Relationship relationFound = null;
+                    if(previousNode == null) {
+                        previousNode = position.startNode();
+                    }
+
+                    for(Relationship relationship :previousNode.getRelationships()){
+                        if(relationship.getEndNode().equals(n)){
+                            relationFound = relationship;
+                        }
+                    }
+                    if(previousNode == position.startNode()) {
+                        output += "(" + previousNode.getProperty("name") + ")";
+                    }
+
+                    output+="<--["+relationFound.getType().name()+","+relationFound.getId()+"]--("+relationFound.getStartNode().getProperty("name")+")";
+
+                    previousNode = position.endNode();
+                } else if(Direction.OUTGOING.equals(direction) && n!=position.startNode()) {
+                    Relationship relationFound = null;
+
+                    if(previousNode == null) {
+                        previousNode = position.startNode();
+                    }
+
+                    for(Relationship relationship :previousNode.getRelationships()){
+                        if(relationship.getEndNode().equals(n)){
+                            relationFound = relationship;
+                        }
+                    }
+
+                    if(previousNode == position.startNode()) {
+                        output += "(" + position.startNode().getProperty("name") + ")";
+                    }
+
+                    output+="--["+relationFound.getType().name()+","+relationFound.getId()+"]-->("+n.getProperty("name")+")";
+
+                    previousNode = n;
                 }
+
             }
+
+
+        } else {
+            output = "("+position.startNode().getProperty("name")+")";
         }
+
+
 
         return output;
     }

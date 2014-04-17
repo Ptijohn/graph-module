@@ -48,8 +48,6 @@ public class Main {
                 node.setProperty("status", artifact.getStatus());
                 node.setProperty("version", artifact.getVersion());
                 nodes.put(artifact.getName(), node.getId());
-
-                System.out.println(artifact.getName()+" "+node.getId());
             }
             tx.success();
         }
@@ -70,12 +68,14 @@ public class Main {
             tx.success();
         }
 
+        String nodeToTraverse = "D";
+        Direction directionToTraverse = Direction.OUTGOING;
         //Transaction to display graph result
         try ( Transaction tx = graphDb.beginTx() )
         {
-            System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, Direction.OUTGOING, "C", 4));
+            System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, directionToTraverse, nodeToTraverse, 4));
 
-            System.out.println(GraphUtil.displayGraphCustom(graphDb, nodes, Direction.OUTGOING, "C", 4));
+            System.out.println(GraphUtil.displayGraphCustom(graphDb, nodes, directionToTraverse, nodeToTraverse, 4));
 
             System.out.println("Isolated nodes size : "+GraphUtil.findIsolatedNodes(graphDb).size());
 
@@ -91,9 +91,9 @@ public class Main {
         //Transaction to display graph result
         try ( Transaction tx = graphDb.beginTx() )
         {
-            System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, Direction.OUTGOING, "C", 4));
+            System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, directionToTraverse, nodeToTraverse, 4));
 
-            System.out.println(GraphUtil.displayGraphCustom(graphDb, nodes, Direction.OUTGOING, "C", 4));
+            System.out.println(GraphUtil.displayGraphCustom(graphDb, nodes, directionToTraverse, nodeToTraverse, 4));
 
             System.out.println("Isolated nodes size : "+GraphUtil.findIsolatedNodes(graphDb).size());
 
