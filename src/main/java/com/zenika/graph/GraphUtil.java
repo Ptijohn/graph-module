@@ -4,7 +4,6 @@ import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.traversal.Evaluators;
 import org.neo4j.tooling.GlobalGraphOperations;
 
-import javax.management.relation.Relation;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -40,17 +39,11 @@ public class GraphUtil {
             //We go through the artifact list to create all necessary nodes
             for(Artifact artifact : artifacts){
                 if(nodes.get(artifact.getName()) == null){
-                    Node node = graphDb.createNode();
-                    node.setProperty("org", artifact.getOrg());
-                    node.setProperty("name", artifact.getName());
-                    node.setProperty("status", artifact.getStatus());
-                    node.setProperty("version", artifact.getVersion());
-                    nodes.put(artifact.getName(), node.getId());
+                    createNodeFromArtifact(artifact, graphDb, nodes);
                 }
             }
             tx.success();
         }
-
 
         // We go through the new artifacts to create necessary relationships
         try ( Transaction tx = graphDb.beginTx() )
@@ -59,51 +52,100 @@ public class GraphUtil {
             for(Artifact artifact : artifacts){
                 Node node = graphDb.getNodeById(nodes.get(artifact.getName()));
 
+                //If our new node have dependencies or not
                 if(artifact.getDependencies() != null && !artifact.getDependencies().isEmpty()){
                     // If our node doesn't have any relationship, we just add the new relationships
                     if(!node.hasRelationship(Direction.OUTGOING, RelTypes.DEPENDS_OF)){
-                        for(Artifact dependency : artifact.getDependencies()){
-                            relationshipList.add(node.createRelationshipTo(graphDb.getNodeById(nodes.get(dependency.getName())), RelTypes.DEPENDS_OF).getId());
-                        }
-                    } else { // Here we update current relationships
-                        //TODO Well, this part of code seems really heavy, should be easy to lighten this a bit
-                        //First, we add new dependencies
-                        for(Artifact dependency : artifact.getDependencies()){
-                            Relationship relationshipFound = null;
-                            for(Relationship relationship : node.getRelationships(Direction.OUTGOING, RelTypes.DEPENDS_OF)){
-                                if(dependency.getName().equals(relationship.getEndNode().getProperty("name"))){
-                                    relationshipFound = relationship;
-                                }
-                            }
-                            if(relationshipFound == null){
-                                relationshipList.add(node.createRelationshipTo(graphDb.getNodeById(nodes.get(dependency.getName())), RelTypes.DEPENDS_OF).getId());
-                            }
-                        }
-                        //And then, we delete unnecessary relationships
-                        for(Relationship relationship : node.getRelationships(Direction.OUTGOING, RelTypes.DEPENDS_OF)){
-                            boolean relationshipFound = false;
-                            for(Artifact dependency : artifact.getDependencies()){
-                                relationshipFound = relationshipFound || dependency.getName().equals(relationship.getEndNode().getProperty("name"));
-                            }
-                            //If we didn't find
-                            if(!relationshipFound){
-                                relationship.delete();
-                            }
-                        }
+                        addDependenciesListToGraph(graphDb, nodes, artifact.getDependencies(), relationshipList, node);
+                    } else {
+                        // In case of old and new node having relationships, we have to check
+                        // if new node has existing relationships or not
+                        updateRelationships(node, artifact, relationshipList, graphDb, nodes);
                     }
                 } else {
                     //If new artifact doesn't have any relationship, but old node has, we delete this relationships
                     if(node.hasRelationship(Direction.OUTGOING, RelTypes.DEPENDS_OF)){
-                        for(Relationship relationship : node.getRelationships(Direction.OUTGOING, RelTypes.DEPENDS_OF)){
-                            relationshipList.remove(relationship.getId());
-                            relationship.delete();
-                        }
+                        deleteDependenciesListFromGraph(node.getRelationships(Direction.OUTGOING, RelTypes.DEPENDS_OF), relationshipList);
                     }
                 }
             }
 
             tx.success();
         }
+    }
+
+    /**
+     * Method that
+     * @param node
+     * @param artifact
+     * @param relationshipList
+     * @param graphDb
+     * @param nodes
+     */
+    private static void updateRelationships(Node node, Artifact artifact, List<Long> relationshipList, GraphDatabaseService graphDb, Map<String, Long> nodes){
+        List<Artifact> dependenciesToAdd = new ArrayList<Artifact>();
+        List<Artifact> dependenciesAlreadyPresent = new ArrayList<Artifact>();
+        //We delete unnecessary relationships and store dependencies to add before really adding them.
+        for(Relationship relationship : node.getRelationships(Direction.OUTGOING, RelTypes.DEPENDS_OF)){
+            boolean relationshipFound = false;
+            for(Artifact dependency : artifact.getDependencies()){
+                relationshipFound = relationshipFound || dependency.getName().equals(relationship.getEndNode().getProperty("name"));
+                if(!dependency.getName().equals(relationship.getEndNode().getProperty("name")) && !dependenciesToAdd.contains(dependency) && !dependenciesAlreadyPresent.contains(dependency)){
+                    dependenciesToAdd.add(dependency);
+                } else if(dependency.getName().equals(relationship.getEndNode().getProperty("name")) && dependenciesToAdd.contains(dependency)){
+                    dependenciesToAdd.remove(dependency);
+                } else if(dependency.getName().equals(relationship.getEndNode().getProperty("name")) && !dependenciesAlreadyPresent.contains(dependency)){
+                    dependenciesAlreadyPresent.add(dependency);
+                }
+            }
+            //If we didn't find the relationship in the node's dependencies, we delete it
+            if(!relationshipFound){
+                relationship.delete();
+            }
+        }
+        //We then add those dependencies spotted during deleting process
+        addDependenciesListToGraph(graphDb, nodes, dependenciesToAdd, relationshipList, node);
+    }
+
+    /**
+     * Add a list of artifacts to the graph as relationships to the node in entrance
+     * @param graphDb
+     * @param nodes
+     * @param dependenciesToAdd
+     * @param relationshipList
+     * @param node
+     */
+    private static void addDependenciesListToGraph(GraphDatabaseService graphDb, Map<String, Long> nodes, List<Artifact> dependenciesToAdd, List<Long> relationshipList, Node node){
+        for(Artifact dependency : dependenciesToAdd){
+            relationshipList.add(node.createRelationshipTo(graphDb.getNodeById(nodes.get(dependency.getName())), RelTypes.DEPENDS_OF).getId());
+        }
+    }
+
+    /**
+     * Delete a list (iterable) of relationships from the graph
+     * @param relationshipsToDelete
+     * @param relationshipList
+     */
+    private static void deleteDependenciesListFromGraph(Iterable<Relationship> relationshipsToDelete, List<Long> relationshipList){
+        for(Relationship relationship : relationshipsToDelete){
+            relationshipList.remove(relationship.getId());
+            relationship.delete();
+        }
+    }
+
+    /**
+     * Create a node from an artifact object
+     * @param artifact
+     * @param graphDb
+     * @param nodes
+     */
+    public static void createNodeFromArtifact(Artifact artifact, GraphDatabaseService graphDb, Map<String, Long> nodes){
+        Node node = graphDb.createNode();
+        node.setProperty("org", artifact.getOrg());
+        node.setProperty("name", artifact.getName());
+        node.setProperty("status", artifact.getStatus());
+        node.setProperty("version", artifact.getVersion());
+        nodes.put(artifact.getName(), node.getId());
     }
 
     /**

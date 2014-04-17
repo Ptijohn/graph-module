@@ -3,7 +3,6 @@ package com.zenika.graph;
 import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
-import org.neo4j.graphdb.traversal.Evaluators;
 import org.neo4j.tooling.GlobalGraphOperations;
 
 import java.io.IOException;
@@ -16,14 +15,12 @@ import java.util.*;
 public class Main {
     public static void main(String[] args){
         Properties prop = getProperties();
-        //Graph graph = null;
         List<Artifact> artifacts;
         List<Artifact> artifactsToMerge;
         Map<String, Long> nodes = new HashMap<String, Long>();
         List<Long> relationshipList = new ArrayList<Long>();
 
         GraphDatabaseService graphDb;
-        Relationship relationship;
 
         graphDb = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(prop.getProperty(GraphConstants.DB_PATH)).setConfig(GraphDatabaseSettings.cache_type,"strong").newGraphDatabase();
 
@@ -42,12 +39,7 @@ public class Main {
         {
             //We go through the artifact list to create all nodes
             for(Artifact artifact : artifacts){
-                Node node = graphDb.createNode();
-                node.setProperty("org", artifact.getOrg());
-                node.setProperty("name", artifact.getName());
-                node.setProperty("status", artifact.getStatus());
-                node.setProperty("version", artifact.getVersion());
-                nodes.put(artifact.getName(), node.getId());
+                GraphUtil.createNodeFromArtifact(artifact, graphDb, nodes);
             }
             tx.success();
         }
@@ -82,8 +74,6 @@ public class Main {
             tx.success();
         }
 
-
-
         System.out.println("Merging...");
         GraphUtil.mergeNode(graphDb, artifactsToMerge, nodes, relationshipList);
         System.out.println("Merging DONE");
@@ -108,6 +98,10 @@ public class Main {
         graphDb.shutdown();
     }
 
+    /**
+     * Gets properties object extracted from graph.properties file
+     * @return
+     */
     public static Properties getProperties(){
         Properties prop = new Properties();
         InputStream input = null;
@@ -176,6 +170,4 @@ public class Main {
             tx.success();
         }
     }
-
-
 }
