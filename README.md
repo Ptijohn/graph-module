@@ -43,7 +43,9 @@ For more details, please have a look at Artifact, Graph and ParserUtil classes.
 neo4j
 ============
 
-Now including neo4j to manage our nodes. You can have a look at Main.java to see how we can go through our graph from one node or another, in whatever direction we want. (See commented code)
+Now including neo4j to manage our nodes. You can have a look at GraphUtil.java to see how we can go through our graph from one node or another, in whatever direction we want. (See commented code)
+Also, we now get nodes from DB if it is not empty.
+
 
 merge
 ============
@@ -54,4 +56,4 @@ But, despite its construction, the function does what we want it to do, it merge
 next
 ============
 Two things to do on the roadmap :
-* Create a service that, if the databse is already populated, gets the nodes from there and not from the files present in our directories
+* Customize service so that we have the choice of getting nodes from DB or not if DB is not empty
