@@ -1,7 +1,8 @@
 graph-module
 ============
 
-A simple graph module. It scans a repository for files containing nodes with dependencies (JSON). It loads thoses dependencies in Java objects, and then it inverts all dependencies in the graph. 
+A simple graph module. It scans a repository for files containing artifacts with dependencies (JSON). It loads thoses dependencies in Java objects, inserts those artifacts(nodes) and dependencies(relationships) into an embedded Neo4J DB.
+It then performs a few operations on the graph -> traversing it in one way or the other, merging an updated node into the graph, ...
 
 json-format
 ============
@@ -54,4 +55,3 @@ next
 ============
 Two things to do on the roadmap :
 * Create a service that, if the databse is already populated, gets the nodes from there and not from the files present in our directories
-* Getting a properly working custom display, since it's not really behaving well right now...
