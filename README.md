@@ -54,3 +54,4 @@ next
 ============
 Two things to do on the roadmap :
 * Create a service that, if the databse is already populated, gets the nodes from there and not from the files present in our directories
+* Getting a properly working custom display, since it's not really behaving well right now...
