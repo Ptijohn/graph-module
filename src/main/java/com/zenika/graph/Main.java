@@ -15,57 +15,58 @@ import java.util.*;
 public class Main {
     public static void main(String[] args){
         Properties prop = getProperties();
-        List<Artifact> artifacts;
-        List<Artifact> artifactsToMerge;
+        List<Artifact> artifacts = null;
+        List<Artifact> artifactsToMerge = null;
         Map<String, Long> nodes = new HashMap<String, Long>();
-        List<Long> relationshipList = new ArrayList<Long>();
-
         GraphDatabaseService graphDb;
+
+        //Two variables that you can change to alter the result displayed
+        String nodeToTraverse = "D";
+        Direction directionToTraverse = Direction.OUTGOING;
 
         graphDb = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(prop.getProperty(GraphConstants.DB_PATH)).setConfig(GraphDatabaseSettings.cache_type,"strong").newGraphDatabase();
 
-        registerShutdownHook(graphDb);
+        DBUtil.registerShutdownHook(graphDb);
 
-        if(prop == null){
-            artifacts = ParserUtil.scanDirectory("src/main/resources/Nodes");
-            artifactsToMerge = ParserUtil.scanDirectory("src/main/resources/NodesToMerge");
-        } else {
-            artifacts = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.ARTIFACTS_DIRECTORY));
-            artifactsToMerge = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.ARTIFCATS_MERGE_DIRECTORY));
-        }
-
-        //Transaction to create nodes
-        try ( Transaction tx = graphDb.beginTx() )
-        {
-            //We go through the artifact list to create all nodes
-            for(Artifact artifact : artifacts){
-                GraphUtil.createNodeFromArtifact(artifact, graphDb, nodes);
+        //We check if we can get nodes from DB. If we can, we bypass getting nodes from files
+        if(!GraphUtil.getNodesFromDB(graphDb, nodes)){
+            if(prop == null){
+                artifacts = ParserUtil.scanDirectory("src/main/resources/Nodes");
+                artifactsToMerge = ParserUtil.scanDirectory("src/main/resources/NodesToMerge");
+            } else {
+                artifacts = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.ARTIFACTS_DIRECTORY));
+                artifactsToMerge = ParserUtil.scanDirectory(prop.getProperty(GraphConstants.ARTIFCATS_MERGE_DIRECTORY));
             }
-            tx.success();
-        }
 
-        //Transaction to create relationships
-        try ( Transaction tx = graphDb.beginTx() )
-        {
-            //We go through it again to get all relationships
-            for(Artifact artifact : artifacts){
-                if(artifact.getDependencies() != null && !artifact.getDependencies().isEmpty()){
-                    Node node = graphDb.getNodeById(nodes.get(artifact.getName()));
-                    for(Artifact dependency : artifact.getDependencies()){
-                        relationshipList.add(node.createRelationshipTo(graphDb.getNodeById(nodes.get(dependency.getName())), RelTypes.DEPENDS_OF).getId());
+            //Transaction to create nodes
+            try ( Transaction tx = graphDb.beginTx() )
+            {
+                //We go through the artifact list to create all nodes
+                for(Artifact artifact : artifacts){
+                    GraphUtil.createNodeFromArtifact(artifact, graphDb, nodes);
+                }
+                tx.success();
+            }
+
+            //Transaction to create relationships
+            try ( Transaction tx = graphDb.beginTx() )
+            {
+                //We go through it again to get all relationships
+                for(Artifact artifact : artifacts){
+                    if(artifact.getDependencies() != null && !artifact.getDependencies().isEmpty()){
+                        Node node = graphDb.getNodeById(nodes.get(artifact.getName()));
+                        GraphUtil.addDependenciesListToGraph(graphDb, nodes, artifact.getDependencies(), node);
                     }
                 }
+
+                tx.success();
             }
-
-            tx.success();
         }
 
-        String nodeToTraverse = "D";
-        Direction directionToTraverse = Direction.OUTGOING;
         //Transaction to display graph result
         try ( Transaction tx = graphDb.beginTx() )
         {
-            System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, directionToTraverse, nodeToTraverse, 4));
+            //System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, directionToTraverse, nodeToTraverse, 4));
 
             System.out.println(GraphUtil.displayGraphCustom(graphDb, nodes, directionToTraverse, nodeToTraverse, 4));
 
@@ -74,26 +75,28 @@ public class Main {
             tx.success();
         }
 
-        System.out.println("Merging...");
-        GraphUtil.mergeNode(graphDb, artifactsToMerge, nodes, relationshipList);
-        System.out.println("Merging DONE");
+        if(artifactsToMerge != null) {
+            System.out.println("Merging...");
+            GraphUtil.mergeNode(graphDb, artifactsToMerge, nodes);
+            System.out.println("Merging DONE");
 
-        //Transaction to display graph result
-        try ( Transaction tx = graphDb.beginTx() )
-        {
-            System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, directionToTraverse, nodeToTraverse, 4));
 
-            System.out.println(GraphUtil.displayGraphCustom(graphDb, nodes, directionToTraverse, nodeToTraverse, 4));
+            //Transaction to display graph result
+            try (Transaction tx = graphDb.beginTx()) {
+                //System.out.println(GraphUtil.displayGraphAsNeo4J(graphDb, nodes, directionToTraverse, nodeToTraverse, 4));
 
-            System.out.println("Isolated nodes size : "+GraphUtil.findIsolatedNodes(graphDb).size());
+                System.out.println(GraphUtil.displayGraphCustom(graphDb, nodes, directionToTraverse, nodeToTraverse, 4));
 
-            tx.success();
+                System.out.println("Isolated nodes size : " + GraphUtil.findIsolatedNodes(graphDb).size());
+
+                tx.success();
+            }
         }
-
-
 
         //Cleaning DB, so that we don't keep in DB previous nodes created
-        cleanDB(graphDb);
+        //If you clean it, next startup will get nodes from files
+        //If you don't, we'll get nodes from DB
+        DBUtil.cleanDB(graphDb);
 
         graphDb.shutdown();
     }
@@ -131,43 +134,5 @@ public class Main {
         }
 
         return prop;
-    }
-
-    /**
-     * Make the shutdown of DB cleaner
-     * @param graphDb
-     */
-    private static void registerShutdownHook( final GraphDatabaseService graphDb )
-    {
-        // Registers a shutdown hook for the Neo4j instance so that it
-        // shuts down nicely when the VM exits (even if you "Ctrl-C" the
-        // running application).
-        Runtime.getRuntime().addShutdownHook( new Thread()
-        {
-            @Override
-            public void run()
-            {
-                graphDb.shutdown();
-            }
-        } );
-    }
-
-    /**
-     * Cleans DB of every nodes/relationships
-     * @param graphDb
-     */
-    private static void cleanDB(GraphDatabaseService graphDb){
-        try ( Transaction tx = graphDb.beginTx() )
-        {
-            Iterator<Node> it = GlobalGraphOperations.at(graphDb).getAllNodes().iterator();
-            while(it.hasNext()){
-                Node n = it.next();
-                for(Relationship r : n.getRelationships()){
-                    r.delete();
-                }
-                n.delete();
-            }
-            tx.success();
-        }
     }
 }
