@@ -44,8 +44,13 @@ neo4j
 
 Now including neo4j to manage our nodes. You can have a look at Main.java to see how we can go through our graph from one node or another, in whatever direction we want. (See commented code)
 
+merge
+============
+Since I didn't find any neo4J built-in method to merge a node, I created my own method.
+I don't think it's really well written (far too many loops to my taste), i'll try to better it shortly.
+But, despite its construction, the function does what we want it to do, it merges a node in the graph if the node already exists, meaning updating its relationships (adding/deleting new/old dependencies). It also adds the node if it didn't exist in the graph before.
+
 next
 ============
 Two things to do on the roadmap :
-* Find a way to merge two graphs, or more particularly to merge a small part of the graph that has been updated into the whole graph
 * Create a service that, if the databse is already populated, gets the nodes from there and not from the files present in our directories
