@@ -200,57 +200,49 @@ public class GraphUtil {
      */
     private static String buildRelationsGraph(Path position, Direction direction){
         String output = "";
-        //output += "("+node.getProperty("name")+")";
-        /*System.out.println("Start : "+position.startNode());
-        System.out.println("End : "+position.endNode());
-        System.out.println("Number : "+position.length());*/
         if(position.length() > 0){
             Iterator<Node> it = position.nodes().iterator();
 
             Node n = null;
             Node previousNode = null;
+            boolean firstOccurence = true;
+            //We iterate over the nodes accessible at this position
             while(it.hasNext()){
                 n = it.next();
-                if(Direction.INCOMING.equals(direction) && n!=position.endNode()){
-                    Relationship relationFound = null;
-                    if(previousNode == null) {
-                        previousNode = position.startNode();
-                    }
 
-                    for(Relationship relationship :previousNode.getRelationships()){
-                        if(relationship.getEndNode().equals(n)){
-                            relationFound = relationship;
-                        }
+                Relationship relationFound = null;
+
+                //When we first go through the loop, we set previousNode as the startNode of our position
+                //It will be used to find next relationship when we go deeper into the graph
+                if(previousNode == null) {
+                    previousNode = position.startNode();
+                }
+
+                //We look for the relationship between our current node and the previous node
+                for(Relationship relationship :previousNode.getRelationships()){
+                    if(relationship.getEndNode().equals(n)){
+                        relationFound = relationship;
                     }
-                    if(previousNode == position.startNode()) {
-                        output += "(" + previousNode.getProperty("name") + ")";
-                    }
+                }
+                //If this is our first loop, we add the first node name
+                if(firstOccurence) {
+                    output += "(" + previousNode.getProperty("name") + ")";
+                }
+
+                //Depending on the direction in which we wish to traverse the graph, the output will be different
+                if(Direction.INCOMING.equals(direction) && n!=position.endNode()){
 
                     output+="<--["+relationFound.getType().name()+","+relationFound.getId()+"]--("+relationFound.getStartNode().getProperty("name")+")";
 
+                    //We set the previous node as the end node of our position (because of INCOMING direction)
                     previousNode = position.endNode();
                 } else if(Direction.OUTGOING.equals(direction) && n!=position.startNode()) {
-                    Relationship relationFound = null;
-
-                    if(previousNode == null) {
-                        previousNode = position.startNode();
-                    }
-
-                    for(Relationship relationship :previousNode.getRelationships()){
-                        if(relationship.getEndNode().equals(n)){
-                            relationFound = relationship;
-                        }
-                    }
-
-                    if(previousNode == position.startNode()) {
-                        output += "(" + position.startNode().getProperty("name") + ")";
-                    }
 
                     output+="--["+relationFound.getType().name()+","+relationFound.getId()+"]-->("+n.getProperty("name")+")";
 
                     previousNode = n;
                 }
-
+                firstOccurence = false;
             }
 
         } else {

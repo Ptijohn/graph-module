@@ -23,8 +23,8 @@ public class Main {
         GraphDatabaseService graphDb;
 
         //Two variables that you can change to alter the result displayed
-        String nodeToTraverse = "D";
-        Direction directionToTraverse = Direction.OUTGOING;
+        String nodeToTraverse = "A";
+        Direction directionToTraverse = Direction.INCOMING;
 
         graphDb = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(prop.getProperty(GraphConstants.DB_PATH)).setConfig(GraphDatabaseSettings.cache_type,"strong").newGraphDatabase();
 
@@ -35,7 +35,7 @@ public class Main {
             Scanner scanInput  = new Scanner(System.in);
 
             do {
-                System.out.print("Do you want to load nodes from DB (if not, DB will be cleaned nodes loaded from files)? (O/n): ");
+                System.out.print("Nodes detected in DB, do you want to load nodes from DB (if not, DB will be cleaned nodes loaded from files)? (O/n): ");
 
                 answer = scanInput.nextLine();
             }//end do
