@@ -5,8 +5,10 @@ import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.tooling.GlobalGraphOperations;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
 
 /**
@@ -27,9 +29,25 @@ public class Main {
         graphDb = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(prop.getProperty(GraphConstants.DB_PATH)).setConfig(GraphDatabaseSettings.cache_type,"strong").newGraphDatabase();
 
         DBUtil.registerShutdownHook(graphDb);
+        String answer = "";
+        if(!GraphUtil.isDBEmpty(graphDb)){
 
-        //We check if we can get nodes from DB. If we can, we bypass getting nodes from files
-        if(!GraphUtil.getNodesFromDB(graphDb, nodes)){
+            Scanner scanInput  = new Scanner(System.in);
+
+            do {
+                System.out.print("Do you want to load nodes from DB (if not, DB will be cleaned nodes loaded from files)? (O/n): ");
+
+                answer = scanInput.nextLine();
+            }//end do
+            while(!"O".equals(answer) && !"n".equals(answer));
+
+        }
+
+        if("O".equals(answer)){
+            GraphUtil.getNodesFromDB(graphDb, nodes);
+        } else {
+            DBUtil.cleanDB(graphDb);
+
             if(prop == null){
                 artifacts = ParserUtil.scanDirectory("src/main/resources/Nodes");
                 artifactsToMerge = ParserUtil.scanDirectory("src/main/resources/NodesToMerge");
@@ -95,8 +113,8 @@ public class Main {
 
         //Cleaning DB, so that we don't keep in DB previous nodes created
         //If you clean it, next startup will get nodes from files
-        //If you don't, we'll get nodes from DB
-        DBUtil.cleanDB(graphDb);
+        //If you don't, we'll get nodes from DB or files, that will be your choice
+        //DBUtil.cleanDB(graphDb);
 
         graphDb.shutdown();
     }

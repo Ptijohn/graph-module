@@ -31,6 +31,12 @@ public class GraphUtil {
         return isolatedNodes;
     }
 
+    /**
+     * Merges an existing (or not) node into our graph
+     * @param graphDb
+     * @param artifacts
+     * @param nodes
+     */
     public static void mergeNode(GraphDatabaseService graphDb, List<Artifact> artifacts, Map<String, Long> nodes){
         // For each new artifact, we verify if it's in the graph or not, and add it or not if necessary
 
@@ -254,6 +260,12 @@ public class GraphUtil {
         return output;
     }
 
+    /**
+     * Load nodes from DB if it is not empty. The nodes are actually loaded in our map name->id for easier retrieval
+     * @param graphDb
+     * @param nodes
+     * @return
+     */
     public static boolean getNodesFromDB(GraphDatabaseService graphDb, Map<String, Long> nodes){
         Iterator<Node> it = null;
         try ( Transaction tx = graphDb.beginTx() ) {
@@ -271,5 +283,22 @@ public class GraphUtil {
             tx.success();
         }
         return true;
+    }
+
+    /**
+     * Checks if DB is empty or not
+     * @param graphDb
+     * @return true if empty
+     */
+    public static boolean isDBEmpty(GraphDatabaseService graphDb){
+        Iterator<Node> it = null;
+        boolean emptyDB = false;
+        try ( Transaction tx = graphDb.beginTx() ) {
+            it = GlobalGraphOperations.at(graphDb).getAllNodes().iterator();
+
+            emptyDB = (it == null || !it.hasNext());
+            tx.success();
+        }
+        return emptyDB;
     }
 }
