@@ -44,7 +44,7 @@ neo4j
 ============
 
 Now including neo4j to manage our nodes. You can have a look at GraphUtil.java to see how we can go through our graph from one node or another, in whatever direction we want. (See commented code)
-Also, we now get nodes from DB if it is not empty.
+If DB is empty, we get nodes from files. If not, we give you the choice between loading from DB and loading from files (and cleaning DB).
 
 
 merge
@@ -55,5 +55,4 @@ But, despite its construction, the function does what we want it to do, it merge
 
 next
 ============
-Two things to do on the roadmap :
-* Customize service so that we have the choice of getting nodes from DB or not if DB is not empty
+That's all folks!
